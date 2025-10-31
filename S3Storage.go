@@ -13,9 +13,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/dracory/str"
 	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/support/file"
-	"github.com/gouniverse/utils"
 )
 
 // S3Storage implements the StorageInterface for an S3 compliant file storage,
@@ -296,7 +296,7 @@ func (s *S3Storage) Put(filePath string, content []byte) error {
 }
 
 func (s *S3Storage) PutFile(filePath string, source filesystem.File) (string, error) {
-	return s.PutFileAs(filePath, source, utils.StrRandom(40))
+	return s.PutFileAs(filePath, source, str.Random(40))
 }
 
 func (s *S3Storage) PutFileAs(filePath string, source filesystem.File, name string) (string, error) {
