@@ -118,13 +118,15 @@ func (s *SQLStorage) Copy(originFilePath, targetFilePath string) error {
 		return err
 	}
 
+	newName := s.findFileName(targetFilePath)
+
 	file := sqlfilestore.NewFile().
 		SetParentID(targetDirectory.ID()).
-		SetName(record.Name()).
+		SetName(newName).
 		SetContents(record.Contents()).
 		SetSize(record.Size()).
 		SetExtension(record.Extension()).
-		SetPath(targetDirectory.Path() + PATH_SEPARATOR + record.Name())
+		SetPath(targetDirectory.Path() + PATH_SEPARATOR + newName)
 
 	err = s.store.RecordCreate(context.Background(), file)
 
@@ -169,6 +171,8 @@ func (s *SQLStorage) DeleteFile(filePaths []string) error {
 			if err != nil {
 				return err
 			}
+
+			continue
 		}
 
 		return errors.New("not a file or directory: " + record.Path())

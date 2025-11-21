@@ -60,7 +60,7 @@ func (s *StaticStorage) Size(filePath string) (int64, error) {
 }
 
 func (s *StaticStorage) Url(filePath string) (string, error) {
-	return strings.TrimRight(s.disk.Url, "/") + "/" + strings.TrimLeft(filePath, "/"), errors.New("not implemented")
+	return strings.TrimRight(s.disk.Url, "/") + "/" + strings.TrimLeft(filePath, "/"), nil
 }
 
 func (s *StaticStorage) Put(filePath string, content []byte) error {
