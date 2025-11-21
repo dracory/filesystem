@@ -1,6 +1,7 @@
 package filesystem
 
 import (
+	"context"
 	"database/sql"
 	"encoding/base64"
 	"errors"
@@ -8,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dromara/carbon/v2"
-	"github.com/emirpasic/gods/utils"
 	"github.com/dracory/sb"
 	"github.com/dracory/sqlfilestore"
+	"github.com/dromara/carbon/v2"
+	"github.com/emirpasic/gods/utils"
 )
 
 var _ StorageInterface = (*SQLStorage)(nil) // verify it extends the storage interface
@@ -83,7 +84,7 @@ func (s *SQLStorage) findParentDirectoryFromPath(path string) (*sqlfilestore.Rec
 
 	targetDirPath := ROOT_PATH + strings.Join(targetPathParts[:len(targetPathParts)-1], PATH_SEPARATOR)
 
-	targetDirectory, err := s.store.RecordFindByPath(targetDirPath, sqlfilestore.RecordQueryOptions{})
+	targetDirectory, err := s.store.RecordFindByPath(context.TODO(), targetDirPath, sqlfilestore.RecordQueryOptions{})
 
 	if err != nil {
 		return nil, err
@@ -97,7 +98,7 @@ func (s *SQLStorage) findParentDirectoryFromPath(path string) (*sqlfilestore.Rec
 }
 
 func (s *SQLStorage) Copy(originFilePath, targetFilePath string) error {
-	record, err := s.store.RecordFindByPath(originFilePath, sqlfilestore.RecordQueryOptions{})
+	record, err := s.store.RecordFindByPath(context.TODO(), originFilePath, sqlfilestore.RecordQueryOptions{})
 
 	if err != nil {
 		return err
@@ -125,7 +126,7 @@ func (s *SQLStorage) Copy(originFilePath, targetFilePath string) error {
 		SetExtension(record.Extension()).
 		SetPath(targetDirectory.Path() + PATH_SEPARATOR + record.Name())
 
-	err = s.store.RecordCreate(file)
+	err = s.store.RecordCreate(context.TODO(), file)
 
 	if err != nil {
 		return err
@@ -136,7 +137,7 @@ func (s *SQLStorage) Copy(originFilePath, targetFilePath string) error {
 
 func (s *SQLStorage) DeleteFile(filePaths []string) error {
 	for _, filePath := range filePaths {
-		record, err := s.store.RecordFindByPath(filePath, sqlfilestore.RecordQueryOptions{
+		record, err := s.store.RecordFindByPath(context.TODO(), filePath, sqlfilestore.RecordQueryOptions{
 			Columns: []string{
 				sqlfilestore.COLUMN_ID,
 				sqlfilestore.COLUMN_TYPE,
@@ -163,7 +164,7 @@ func (s *SQLStorage) DeleteFile(filePaths []string) error {
 		}
 
 		if record.IsFile() {
-			err = s.store.RecordSoftDelete(record)
+			err = s.store.RecordSoftDelete(context.TODO(), record)
 
 			if err != nil {
 				return err
@@ -177,7 +178,7 @@ func (s *SQLStorage) DeleteFile(filePaths []string) error {
 
 // DeleteDirectory deletes a directory
 func (s *SQLStorage) DeleteDirectory(directoryPath string) error {
-	file, err := s.store.RecordFindByPath(directoryPath, sqlfilestore.RecordQueryOptions{
+	file, err := s.store.RecordFindByPath(context.TODO(), directoryPath, sqlfilestore.RecordQueryOptions{
 		Columns: []string{
 			sqlfilestore.COLUMN_ID,
 			sqlfilestore.COLUMN_TYPE,
@@ -196,7 +197,7 @@ func (s *SQLStorage) DeleteDirectory(directoryPath string) error {
 		return errors.New("not a directory")
 	}
 
-	children, err := s.store.RecordList(sqlfilestore.RecordQueryOptions{
+	children, err := s.store.RecordList(context.TODO(), sqlfilestore.RecordQueryOptions{
 		ParentID: file.ID(),
 		Columns: []string{
 			sqlfilestore.COLUMN_ID,
@@ -220,14 +221,14 @@ func (s *SQLStorage) DeleteDirectory(directoryPath string) error {
 			continue
 		}
 
-		err = s.store.RecordSoftDelete(&child)
+		err = s.store.RecordSoftDelete(context.TODO(), &child)
 
 		if err != nil {
 			return err
 		}
 	}
 
-	err = s.store.RecordSoftDelete(file)
+	err = s.store.RecordSoftDelete(context.TODO(), file)
 
 	return err
 }
@@ -236,7 +237,7 @@ func (s *SQLStorage) DeleteDirectory(directoryPath string) error {
 func (s *SQLStorage) Directories(directoryPath string) ([]string, error) {
 	directoryPath = s.fixPath(directoryPath)
 
-	dir, err := s.store.RecordFindByPath(directoryPath, sqlfilestore.RecordQueryOptions{Columns: []string{"id"}})
+	dir, err := s.store.RecordFindByPath(context.TODO(), directoryPath, sqlfilestore.RecordQueryOptions{Columns: []string{"id"}})
 
 	if err != nil {
 		return nil, err
@@ -246,7 +247,7 @@ func (s *SQLStorage) Directories(directoryPath string) ([]string, error) {
 		return nil, errors.New("directory not found")
 	}
 
-	records, err := s.store.RecordList(sqlfilestore.RecordQueryOptions{
+	records, err := s.store.RecordList(context.TODO(), sqlfilestore.RecordQueryOptions{
 		ParentID: dir.ID(),
 		Type:     sqlfilestore.TYPE_DIRECTORY,
 	})
@@ -272,7 +273,7 @@ func (s *SQLStorage) Directories(directoryPath string) ([]string, error) {
 func (s *SQLStorage) Files(directoryPath string) ([]string, error) {
 	directoryPath = s.fixPath(directoryPath)
 
-	dir, err := s.store.RecordFindByPath(directoryPath, sqlfilestore.RecordQueryOptions{Columns: []string{"id"}})
+	dir, err := s.store.RecordFindByPath(context.TODO(), directoryPath, sqlfilestore.RecordQueryOptions{Columns: []string{"id"}})
 
 	if err != nil {
 		return nil, err
@@ -282,7 +283,7 @@ func (s *SQLStorage) Files(directoryPath string) ([]string, error) {
 		return nil, errors.New("directory not found")
 	}
 
-	records, err := s.store.RecordList(sqlfilestore.RecordQueryOptions{
+	records, err := s.store.RecordList(context.TODO(), sqlfilestore.RecordQueryOptions{
 		ParentID: dir.ID(),
 		Type:     sqlfilestore.TYPE_FILE,
 	})
@@ -307,7 +308,7 @@ func (s *SQLStorage) Files(directoryPath string) ([]string, error) {
 func (s *SQLStorage) Exists(path string) (bool, error) {
 	fixedPath := s.fixPath(path)
 
-	count, err := s.store.RecordCount(sqlfilestore.RecordQueryOptions{
+	count, err := s.store.RecordCount(context.TODO(), sqlfilestore.RecordQueryOptions{
 		Path:    fixedPath,
 		Columns: []string{"id"},
 	})
@@ -328,7 +329,7 @@ func (s *SQLStorage) Move(originFilePath, targetFilePath string) error {
 		return errors.New("origin and target paths are the same")
 	}
 
-	record, err := s.store.RecordFindByPath(originFilePath, sqlfilestore.RecordQueryOptions{
+	record, err := s.store.RecordFindByPath(context.TODO(), originFilePath, sqlfilestore.RecordQueryOptions{
 		Columns: []string{
 			sqlfilestore.COLUMN_ID,
 			sqlfilestore.COLUMN_PARENT_ID,
@@ -359,13 +360,13 @@ func (s *SQLStorage) Move(originFilePath, targetFilePath string) error {
 	record.SetName(newName)
 	record.SetPath(targetDirectory.Path() + PATH_SEPARATOR + newName)
 
-	err = s.store.RecordUpdate(record)
+	err = s.store.RecordUpdate(context.TODO(), record)
 
 	if err != nil {
 		return err
 	}
 
-	return s.store.RecordRecalculatePath(record, targetDirectory)
+	return s.store.RecordRecalculatePath(context.TODO(), record, targetDirectory)
 }
 
 func (s *SQLStorage) MakeDirectory(directoryPath string) error {
@@ -396,7 +397,7 @@ func (s *SQLStorage) MakeDirectory(directoryPath string) error {
 		SetName(directoryName).
 		SetPath(parentDir.Path() + PATH_SEPARATOR + directoryName)
 
-	err = s.store.RecordCreate(directory)
+	err = s.store.RecordCreate(context.TODO(), directory)
 
 	if err != nil {
 		return err
@@ -433,7 +434,7 @@ func (s *SQLStorage) Put(filePath string, content []byte) error {
 		SetPath(filePath).
 		SetSize(utils.ToString(len(content)))
 
-	err = s.store.RecordCreate(file)
+	err = s.store.RecordCreate(context.TODO(), file)
 
 	if err != nil {
 		return err
@@ -447,7 +448,7 @@ func (s *SQLStorage) PutFile(filePath string, source string) (string, error) {
 }
 
 func (s *SQLStorage) ReadFile(filePath string) ([]byte, error) {
-	file, err := s.store.RecordFindByPath(filePath, sqlfilestore.RecordQueryOptions{Columns: []string{"contents"}})
+	file, err := s.store.RecordFindByPath(context.TODO(), filePath, sqlfilestore.RecordQueryOptions{Columns: []string{"contents"}})
 
 	if err != nil {
 		return nil, err
@@ -467,7 +468,7 @@ func (s *SQLStorage) ReadFile(filePath string) ([]byte, error) {
 }
 
 func (s *SQLStorage) Size(filePath string) (int64, error) {
-	file, err := s.store.RecordFindByPath(filePath, sqlfilestore.RecordQueryOptions{Columns: []string{"size"}})
+	file, err := s.store.RecordFindByPath(context.TODO(), filePath, sqlfilestore.RecordQueryOptions{Columns: []string{"size"}})
 
 	if err != nil {
 		return -1, err
@@ -489,7 +490,7 @@ func (s *SQLStorage) Size(filePath string) (int64, error) {
 }
 
 func (s *SQLStorage) LastModified(filePath string) (time.Time, error) {
-	file, err := s.store.RecordFindByPath(filePath, sqlfilestore.RecordQueryOptions{Columns: []string{"updated_at"}})
+	file, err := s.store.RecordFindByPath(context.TODO(), filePath, sqlfilestore.RecordQueryOptions{Columns: []string{"updated_at"}})
 
 	if err != nil {
 		return carbon.Parse(sb.NULL_DATETIME).StdTime(), err
@@ -501,7 +502,7 @@ func (s *SQLStorage) LastModified(filePath string) (time.Time, error) {
 }
 
 func (s *SQLStorage) Url(filePath string) (string, error) {
-	file, err := s.store.RecordFindByPath(filePath, sqlfilestore.RecordQueryOptions{Columns: []string{"path"}})
+	file, err := s.store.RecordFindByPath(context.TODO(), filePath, sqlfilestore.RecordQueryOptions{Columns: []string{"path"}})
 
 	if err != nil {
 		return "", err

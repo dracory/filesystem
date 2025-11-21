@@ -33,8 +33,6 @@ func NewStorage(disk Disk) (StorageInterface, error) {
 	// 	},
 	// }
 
-	// disk := lo.ValueOr(disks, diskName, Disk{})
-
 	if lo.IsEmpty(disk) {
 		return nil, errors.New("disk cannot be empty")
 	}
