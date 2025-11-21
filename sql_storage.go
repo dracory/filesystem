@@ -84,7 +84,7 @@ func (s *SQLStorage) findParentDirectoryFromPath(path string) (*sqlfilestore.Rec
 
 	targetDirPath := ROOT_PATH + strings.Join(targetPathParts[:len(targetPathParts)-1], PATH_SEPARATOR)
 
-	targetDirectory, err := s.store.RecordFindByPath(context.TODO(), targetDirPath, sqlfilestore.RecordQueryOptions{})
+	targetDirectory, err := s.store.RecordFindByPath(context.Background(), targetDirPath, sqlfilestore.RecordQueryOptions{})
 
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func (s *SQLStorage) findParentDirectoryFromPath(path string) (*sqlfilestore.Rec
 }
 
 func (s *SQLStorage) Copy(originFilePath, targetFilePath string) error {
-	record, err := s.store.RecordFindByPath(context.TODO(), originFilePath, sqlfilestore.RecordQueryOptions{})
+	record, err := s.store.RecordFindByPath(context.Background(), originFilePath, sqlfilestore.RecordQueryOptions{})
 
 	if err != nil {
 		return err
@@ -126,7 +126,7 @@ func (s *SQLStorage) Copy(originFilePath, targetFilePath string) error {
 		SetExtension(record.Extension()).
 		SetPath(targetDirectory.Path() + PATH_SEPARATOR + record.Name())
 
-	err = s.store.RecordCreate(context.TODO(), file)
+	err = s.store.RecordCreate(context.Background(), file)
 
 	if err != nil {
 		return err
@@ -137,7 +137,7 @@ func (s *SQLStorage) Copy(originFilePath, targetFilePath string) error {
 
 func (s *SQLStorage) DeleteFile(filePaths []string) error {
 	for _, filePath := range filePaths {
-		record, err := s.store.RecordFindByPath(context.TODO(), filePath, sqlfilestore.RecordQueryOptions{
+		record, err := s.store.RecordFindByPath(context.Background(), filePath, sqlfilestore.RecordQueryOptions{
 			Columns: []string{
 				sqlfilestore.COLUMN_ID,
 				sqlfilestore.COLUMN_TYPE,
@@ -164,7 +164,7 @@ func (s *SQLStorage) DeleteFile(filePaths []string) error {
 		}
 
 		if record.IsFile() {
-			err = s.store.RecordSoftDelete(context.TODO(), record)
+			err = s.store.RecordSoftDelete(context.Background(), record)
 
 			if err != nil {
 				return err
@@ -178,7 +178,7 @@ func (s *SQLStorage) DeleteFile(filePaths []string) error {
 
 // DeleteDirectory deletes a directory
 func (s *SQLStorage) DeleteDirectory(directoryPath string) error {
-	file, err := s.store.RecordFindByPath(context.TODO(), directoryPath, sqlfilestore.RecordQueryOptions{
+	file, err := s.store.RecordFindByPath(context.Background(), directoryPath, sqlfilestore.RecordQueryOptions{
 		Columns: []string{
 			sqlfilestore.COLUMN_ID,
 			sqlfilestore.COLUMN_TYPE,
@@ -197,7 +197,7 @@ func (s *SQLStorage) DeleteDirectory(directoryPath string) error {
 		return errors.New("not a directory")
 	}
 
-	children, err := s.store.RecordList(context.TODO(), sqlfilestore.RecordQueryOptions{
+	children, err := s.store.RecordList(context.Background(), sqlfilestore.RecordQueryOptions{
 		ParentID: file.ID(),
 		Columns: []string{
 			sqlfilestore.COLUMN_ID,
@@ -221,14 +221,14 @@ func (s *SQLStorage) DeleteDirectory(directoryPath string) error {
 			continue
 		}
 
-		err = s.store.RecordSoftDelete(context.TODO(), &child)
+		err = s.store.RecordSoftDelete(context.Background(), &child)
 
 		if err != nil {
 			return err
 		}
 	}
 
-	err = s.store.RecordSoftDelete(context.TODO(), file)
+	err = s.store.RecordSoftDelete(context.Background(), file)
 
 	return err
 }
@@ -237,7 +237,7 @@ func (s *SQLStorage) DeleteDirectory(directoryPath string) error {
 func (s *SQLStorage) Directories(directoryPath string) ([]string, error) {
 	directoryPath = s.fixPath(directoryPath)
 
-	dir, err := s.store.RecordFindByPath(context.TODO(), directoryPath, sqlfilestore.RecordQueryOptions{Columns: []string{"id"}})
+	dir, err := s.store.RecordFindByPath(context.Background(), directoryPath, sqlfilestore.RecordQueryOptions{Columns: []string{"id"}})
 
 	if err != nil {
 		return nil, err
@@ -247,7 +247,7 @@ func (s *SQLStorage) Directories(directoryPath string) ([]string, error) {
 		return nil, errors.New("directory not found")
 	}
 
-	records, err := s.store.RecordList(context.TODO(), sqlfilestore.RecordQueryOptions{
+	records, err := s.store.RecordList(context.Background(), sqlfilestore.RecordQueryOptions{
 		ParentID: dir.ID(),
 		Type:     sqlfilestore.TYPE_DIRECTORY,
 	})
@@ -273,7 +273,7 @@ func (s *SQLStorage) Directories(directoryPath string) ([]string, error) {
 func (s *SQLStorage) Files(directoryPath string) ([]string, error) {
 	directoryPath = s.fixPath(directoryPath)
 
-	dir, err := s.store.RecordFindByPath(context.TODO(), directoryPath, sqlfilestore.RecordQueryOptions{Columns: []string{"id"}})
+	dir, err := s.store.RecordFindByPath(context.Background(), directoryPath, sqlfilestore.RecordQueryOptions{Columns: []string{"id"}})
 
 	if err != nil {
 		return nil, err
