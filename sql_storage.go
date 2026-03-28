@@ -118,6 +118,10 @@ func (s *SQLStorage) Copy(originFilePath, targetFilePath string) error {
 		return err
 	}
 
+	if targetDirectory == nil {
+		return errors.New("target directory not found")
+	}
+
 	newName := s.findFileName(targetFilePath)
 
 	file := sqlfilestore.NewFile().
@@ -478,6 +482,10 @@ func (s *SQLStorage) Size(filePath string) (int64, error) {
 		return -1, err
 	}
 
+	if file == nil {
+		return -1, errors.New("file not found")
+	}
+
 	sizeString := file.Size()
 
 	if sizeString == "" {
@@ -500,6 +508,10 @@ func (s *SQLStorage) LastModified(filePath string) (time.Time, error) {
 		return carbon.Parse(sb.NULL_DATETIME).StdTime(), err
 	}
 
+	if file == nil {
+		return carbon.Parse(sb.NULL_DATETIME).StdTime(), errors.New("file not found")
+	}
+
 	strUpdatedAt := file.UpdatedAt()
 
 	return carbon.Parse(strUpdatedAt, carbon.UTC).StdTime(), nil
@@ -510,6 +522,10 @@ func (s *SQLStorage) Url(filePath string) (string, error) {
 
 	if err != nil {
 		return "", err
+	}
+
+	if file == nil {
+		return "", errors.New("file not found")
 	}
 
 	path := file.Path()
@@ -549,7 +565,7 @@ func (s *SQLStorage) findExtension(path string) string {
 		return ""
 	}
 
-	return nameParts[1]
+	return nameParts[len(nameParts)-1]
 }
 
 // findFileName finds the file name from a path.

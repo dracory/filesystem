@@ -24,6 +24,10 @@ func sqlStorageInitDB(filepath string) *sql.DB {
 func newTestSqlStorage(t *testing.T) *SQLStorage {
 	db := sqlStorageInitDB(":memory:")
 
+	t.Cleanup(func() {
+		db.Close()
+	})
+
 	s, err := NewSqlStorage(SqlStorageOptions{
 		DB:                 db,
 		FilestoreTable:     "sqlstore",
