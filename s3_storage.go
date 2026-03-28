@@ -2,6 +2,7 @@ package filesystem
 
 import (
 	"context"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"path"
@@ -13,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/smithy-go"
 	"github.com/dracory/str"
 	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/support/file"
@@ -52,7 +54,7 @@ func (s *S3Storage) client() (*s3.Client, error) {
 func (s *S3Storage) Copy(originFile, targetFile string) error {
 	s3Client, err := s.client()
 	if err != nil {
-		panic(err)
+		return err
 	}
 	ctx := context.TODO()
 	_, err = s3Client.CopyObject(ctx, &s3.CopyObjectInput{
@@ -67,7 +69,7 @@ func (s *S3Storage) Copy(originFile, targetFile string) error {
 func (s *S3Storage) DeleteFile(filePaths []string) error {
 	s3Client, err := s.client()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	var objectIdentifiers []types.ObjectIdentifier
@@ -96,7 +98,7 @@ func (s *S3Storage) DeleteDirectory(directory string) error {
 	s3Client, err := s.client()
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	if !strings.HasSuffix(directory, "/") {
@@ -148,7 +150,7 @@ func (s *S3Storage) Directories(dir string) ([]string, error) {
 	s3Client, err := s.client()
 
 	if err != nil {
-		panic(err)
+		return []string{}, err
 	}
 
 	input := &s3.ListObjectsV2Input{
@@ -220,7 +222,18 @@ func (s *S3Storage) Exists(file string) (bool, error) {
 
 	_, err = s3Client.HeadObject(ctx, input)
 
-	return err == nil, err
+	if err != nil {
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			errorCode := apiErr.ErrorCode()
+			if errorCode == "NotFound" || errorCode == "NoSuchKey" {
+				return false, nil
+			}
+		}
+		return false, err
+	}
+
+	return true, nil
 }
 
 // func (r *S3) Get(file string) (string, error) {
@@ -269,7 +282,7 @@ func (s *S3Storage) Put(filePath string, content []byte) error {
 
 	s3Client, err := s.client()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// cfmt.Successln("File upload: ", filePath)
