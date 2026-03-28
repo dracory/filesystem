@@ -82,7 +82,25 @@ func (s *SQLStorage) findParentDirectoryFromPath(path string) (*sqlfilestore.Rec
 		return nil, errors.New("invalid path")
 	}
 
-	targetDirPath := ROOT_PATH + strings.Join(targetPathParts[:len(targetPathParts)-1], PATH_SEPARATOR)
+	// Get parent path parts (excluding the last component)
+	parentParts := targetPathParts[:len(targetPathParts)-1]
+	// Filter out empty parts (from leading slash)
+	var filteredParts []string
+	for _, part := range parentParts {
+		if part != "" {
+			filteredParts = append(filteredParts, part)
+		}
+	}
+
+	targetDirPath := ROOT_PATH + strings.Join(filteredParts, PATH_SEPARATOR)
+
+	// Handle root directory case - return virtual root record
+	if targetDirPath == ROOT_PATH || targetDirPath == "" {
+		return sqlfilestore.NewDirectory().
+			SetID(sqlfilestore.ROOT_ID).
+			SetName(ROOT_PATH).
+			SetPath(ROOT_PATH), nil
+	}
 
 	targetDirectory, err := s.store.RecordFindByPath(context.Background(), targetDirPath, sqlfilestore.RecordQueryOptions{})
 
