@@ -69,7 +69,10 @@ The driver supports:
 The SQL driver stores files and directories inside a database table managed by [`github.com/dracory/sqlfilestore`](https://github.com/dracory/sqlfilestore). Use `NewSqlStorage` when you need a structured datastore or offline storage.
 
 ```go
-db, _ := sql.Open("sqlite", ":memory:")
+db, err := sql.Open("sqlite", ":memory:")
+if err != nil {
+    panic(err)
+}
 storage, err := filesystem.NewSqlStorage(filesystem.SqlStorageOptions{
     DB:                 db,
     FilestoreTable:     "filestore",
@@ -93,7 +96,10 @@ storage := &filesystem.StaticStorage{disk: filesystem.Disk{
     Url:      "https://cdn.example.com",
 }}
 
-url, _ := storage.Url("images/logo.png")
+url, err := storage.Url("images/logo.png")
+if err != nil {
+    panic(err)
+}
 // url == "https://cdn.example.com/images/logo.png"
 ```
 
