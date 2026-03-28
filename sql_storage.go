@@ -143,6 +143,7 @@ func (s *SQLStorage) Copy(originFilePath, targetFilePath string) error {
 
 func (s *SQLStorage) DeleteFile(filePaths []string) error {
 	for _, filePath := range filePaths {
+		filePath = s.fixPath(filePath)
 		record, err := s.store.RecordFindByPath(context.Background(), filePath, sqlfilestore.RecordQueryOptions{
 			Columns: []string{
 				sqlfilestore.COLUMN_ID,
@@ -314,10 +315,10 @@ func (s *SQLStorage) Files(directoryPath string) ([]string, error) {
 }
 
 func (s *SQLStorage) Exists(path string) (bool, error) {
-	fixedPath := s.fixPath(path)
+	path = s.fixPath(path)
 
 	count, err := s.store.RecordCount(context.Background(), sqlfilestore.RecordQueryOptions{
-		Path:    fixedPath,
+		Path:    path,
 		Columns: []string{"id"},
 	})
 
@@ -378,6 +379,8 @@ func (s *SQLStorage) Move(originFilePath, targetFilePath string) error {
 }
 
 func (s *SQLStorage) MakeDirectory(directoryPath string) error {
+	directoryPath = s.fixPath(directoryPath)
+
 	exists, err := s.Exists(directoryPath)
 
 	if err != nil {
@@ -419,6 +422,8 @@ func (s *SQLStorage) MakeDirectory(directoryPath string) error {
 // }
 
 func (s *SQLStorage) Put(filePath string, content []byte) error {
+	filePath = s.fixPath(filePath)
+
 	parentDir, err := s.findParentDirectoryFromPath(filePath)
 
 	if err != nil {
@@ -538,6 +543,9 @@ func (s *SQLStorage) Url(filePath string) (string, error) {
 }
 
 func (s *SQLStorage) fixPath(path string) string {
+	// Normalize backslashes to forward slashes (Windows compatibility)
+	path = strings.ReplaceAll(path, "\\", PATH_SEPARATOR)
+
 	if strings.HasPrefix(path, PATH_SEPARATOR) {
 		return path
 	}
