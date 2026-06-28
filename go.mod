@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.104.0
 	github.com/aws/smithy-go v1.27.3
 	github.com/dracory/sb v0.26.0
-	github.com/dracory/sqlfilestore v1.7.0
+	github.com/dracory/sqlfilestore v1.8.0
 	github.com/dracory/str v0.18.0
 	github.com/dromara/carbon/v2 v2.6.16
 	github.com/emirpasic/gods v1.18.1
