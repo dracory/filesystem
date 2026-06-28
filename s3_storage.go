@@ -129,9 +129,10 @@ func (s *S3Storage) DeleteDirectory(directory string) error {
 			}
 		}
 
-		if *listObjectsV2Response.IsTruncated {
+		if aws.ToBool(listObjectsV2Response.IsTruncated) {
 			listObjectsV2Response, err = s3Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
 				Bucket:            aws.String(s.disk.Bucket),
+				Prefix:            aws.String(directory),
 				ContinuationToken: listObjectsV2Response.ContinuationToken,
 			})
 			if err != nil {
@@ -371,7 +372,7 @@ func (s *S3Storage) Size(file string) (int64, error) {
 		return -1, err
 	}
 
-	return *resp.ContentLength, nil
+	return aws.ToInt64(resp.ContentLength), nil
 }
 
 func (s *S3Storage) LastModified(file string) (time.Time, error) {
