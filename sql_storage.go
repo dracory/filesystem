@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"errors"
+	pathPkg "path"
 	"strconv"
 	"strings"
 	"time"
@@ -563,11 +564,15 @@ func (s *SQLStorage) fixPath(path string) string {
 	// Normalize backslashes to forward slashes (Windows compatibility)
 	path = strings.ReplaceAll(path, "\\", PATH_SEPARATOR)
 
-	if strings.HasPrefix(path, PATH_SEPARATOR) {
-		return path
+	// Clean the path to resolve . and .. components, preventing path traversal
+	// Using path.Clean (not filepath.Clean) to ensure forward slashes on all platforms
+	path = pathPkg.Clean(path)
+
+	if !strings.HasPrefix(path, PATH_SEPARATOR) {
+		path = PATH_SEPARATOR + path
 	}
 
-	return PATH_SEPARATOR + path
+	return path
 }
 
 // findExtension finds the file extension from a path.
