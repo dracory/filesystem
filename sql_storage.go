@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dracory/sb"
 	"github.com/dracory/sqlfilestore"
 	"github.com/dromara/carbon/v2"
 	"github.com/emirpasic/gods/utils"
@@ -528,11 +527,11 @@ func (s *SQLStorage) LastModified(filePath string) (time.Time, error) {
 	file, err := s.store.RecordFindByPath(context.Background(), filePath, sqlfilestore.RecordQueryOptions{Columns: []string{"updated_at"}})
 
 	if err != nil {
-		return carbon.Parse(sb.NULL_DATETIME).StdTime(), err
+		return time.Time{}, err
 	}
 
 	if file == nil {
-		return carbon.Parse(sb.NULL_DATETIME).StdTime(), errors.New("file not found")
+		return time.Time{}, errors.New("file not found")
 	}
 
 	strUpdatedAt := file.UpdatedAt()

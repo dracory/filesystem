@@ -6,7 +6,7 @@ type Disk struct {
 	DiskName   string
 	Driver     string
 	Url        string
-	Visibility string // public, private (not implemented)
+	Visibility string // public, private
 
 	// SQL options
 	DB        *sql.DB // for sql

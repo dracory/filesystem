@@ -278,6 +278,13 @@ func (s *S3Storage) Move(oldFile, newFile string) error {
 	return s.DeleteFile([]string{oldFile})
 }
 
+func (s *S3Storage) s3ACL() types.ObjectCannedACL {
+	if s.disk.Visibility == VISIBILITY_PUBLIC {
+		return types.ObjectCannedACLPublicRead
+	}
+	return types.ObjectCannedACLPrivate
+}
+
 func (s *S3Storage) Put(filePath string, content []byte) error {
 	// mimeType := mimetype.Detect(content)
 
@@ -291,17 +298,12 @@ func (s *S3Storage) Put(filePath string, content []byte) error {
 
 	size := int64(len(content))
 	input := &s3.PutObjectInput{
-		Bucket: aws.String(s.disk.Bucket),
-		Key:    aws.String(filePath),
-		Body:   strings.NewReader(string(content)),
-		// ContentLength:      int64(len(content)),
-		// ContentType:        aws.String(mtype.String()),
-		// Body:               bytes.NewReader(buffer),
-		ContentLength:      &size,
-		ContentType:        aws.String(http.DetectContentType(content)),
-		ContentDisposition: aws.String("attachment"),
-		ACL:                types.ObjectCannedACLPublicRead,
-		// ACL:                aws.String("public-read"),
+		Bucket:        aws.String(s.disk.Bucket),
+		Key:           aws.String(filePath),
+		Body:          strings.NewReader(string(content)),
+		ContentLength: &size,
+		ContentType:   aws.String(http.DetectContentType(content)),
+		ACL:           s.s3ACL(),
 	}
 
 	_, err = s3Client.PutObject(context.TODO(), input)
